@@ -83,13 +83,9 @@ public class Group5Player implements OrganismsPlayer {
     public Move asWall(int neighborN, int neighborE, int neighborS, int neighborW, int threshold) {
 
         if (!exceedsBoundary(threshold)) {                                                      //form wall
-
             return Move.movement(Action.fromInt(preferred_direction));
 
         } else if (!exceedsBoundary(threshold+1)) {                                    //there is a gap in wall
-
-            //condition double contact already - stay put
-            if (doubleContact(neighborN, neighborE, neighborS, neighborW)) return Move.movement(STAY_PUT);
 
             //condition less than double contact: turn to fill gap
             if (viable(turn(preferred_direction), neighborN, neighborE, neighborS, neighborW, threshold + 1)) {
@@ -316,17 +312,6 @@ public class Group5Player implements OrganismsPlayer {
 
 
     //INHERITANCE CODE
-    public boolean doubleContact(int neighborN, int neighborE, int neighborS, int neighborW) {
-
-        int contactPoints = 0;
-
-        if (neighborN == 4353) contactPoints++;
-        if (neighborE == 4553) contactPoints++;
-        if (neighborW == 4553) contactPoints++;
-        if (neighborS == 4553) contactPoints++;
-
-        return contactPoints > 1;
-    }
     public boolean exceedsBoundary(int threshold, int verticalDistance, int horizontalDistance) {
 
         if (verticalDistance > threshold) return true;
