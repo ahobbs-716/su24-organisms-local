@@ -151,14 +151,13 @@ public class Group5Player implements OrganismsPlayer {
                 return Move.reproduce(Action.fromInt(1), calculateDNA(1, 1, 1));
         } else return Move.movement(Action.STAY_PUT);
     }
-
     @Override
     public Move move(int foodHere, int energyLeft,
                      boolean foodN, boolean foodE, boolean foodS, boolean foodW,
                      int neighborN, int neighborE, int neighborS, int neighborW) throws Exception {
 
         int threshold = origin_clock/5;
-        origin_clock++;
+        if (origin_clock < 18) origin_clock++;
 
         if (generation == -1) return updateDistance(asAncestor());
         else if (generation == 0) return updateDistance(asWall(neighborN, neighborE, neighborS, neighborW, threshold));
@@ -329,9 +328,6 @@ public class Group5Player implements OrganismsPlayer {
         return contactPoints > 1;
     }
     public boolean exceedsBoundary(int threshold, int verticalDistance, int horizontalDistance) {
-
-        System.out.println("h " + horizontalDistance);
-        System.out.println("v " + verticalDistance);
 
         if (verticalDistance > threshold) return true;
         if (verticalDistance < -threshold) return true;
