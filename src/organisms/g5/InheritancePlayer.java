@@ -43,6 +43,12 @@ public class InheritancePlayer implements OrganismsPlayer {
 
         }
     }
+
+    public String getBinary(int num) {
+        return String.format("%32s", Integer.toUnsignedString(num, 2)).replace(' ', '0');
+    }
+
+
     @Override
     public String name() {
         return "Inheritance Player";
@@ -54,17 +60,34 @@ public class InheritancePlayer implements OrganismsPlayer {
         else return new Color(60, 30, 255, 255);
     }
 
+    /**
+     * Checks whether an organism has moved outside a specified boundary
+     * (i.e. is strictly more than threshold units away from their start point)
+     * @param threshold the number of acceptable units an organism can move from its start point
+     * @param verticalDistance the vertical position that you wish to assess. Note that this can be positive or negative.
+     * @param horizontalDistance the horizontal position that you wish to assess. Note that this can be positive or negative.
+     * @return a boolean indicating whether the organism is strictly beyond the boundary
+     */
     public boolean exceedsBoundary(int threshold, int verticalDistance, int horizontalDistance) {
         return (verticalDistance > threshold) || (verticalDistance < -threshold) || (horizontalDistance > threshold) || (horizontalDistance < -threshold);
 
     }
+
+    /** wrapper method using current vertical and horizontal distances from first ancestor organism.
+     * @param threshold the number of acceptable units an organism can move from its start point
+     * @return a boolean indicating whether the organism is strictly beyond the boundary
+     */
     public boolean exceedsBoundary(int threshold) {
         return exceedsBoundary(threshold, vertical_dist, horizontal_dist);
     }
 
-    public String getBinary(int num) {
-        return String.format("%32s", Integer.toUnsignedString(num, 2)).replace(' ', '0');
-    }
+    /**
+     * helper method used to interpret the (horizontal and vertical) distance parameters written into the dna code.
+     * This is required because the dna can only store positive numbers.
+     * Therefore, any negative number is treated as a positive number over 20.
+     * @param distance the binary number to interpret
+     * @return the binary number, interpreted as a (positive or negative) integer
+     */
     public int interpretDistance(int distance) {
 
         if (distance > 20) return  -(distance - 20);
@@ -135,10 +158,14 @@ public class InheritancePlayer implements OrganismsPlayer {
     public boolean viable(int proposed, int neighborN, int neighborE,
                             int neighborS, int neighborW, int threshold) {
 
+        //set up vars
         int projectedHorizontal= preemptDistance(Action.fromInt(proposed), horizontal_dist, true);
         int projectedVertical= preemptDistance(Action.fromInt(proposed), vertical_dist, false);
 
+        //check whether it exceeds the boundary
         if (exceedsBoundary(threshold, projectedVertical, projectedHorizontal)) return false;
+
+        //check whether it would lead to a collision with a neighbour
         else if (proposed == NORTH.intValue() && neighborN != -1) return false;
         else if (proposed == EAST.intValue() && neighborE != -1) return false;
         else if (proposed == SOUTH.intValue() && neighborS != -1) return false;
@@ -199,24 +226,43 @@ public class InheritancePlayer implements OrganismsPlayer {
 
         } else {
 
-            if (!exceedsBoundary(threshold)) {
+            if (!exceedsBoundary(threshold)) {                                                      //form wall
 
                 return Move.movement(updateDistance(Action.fromInt(preferred_direction)));
 
-            } else if (!exceedsBoundary(threshold+1)) {
+            } else if (!exceedsBoundary(threshold+1)) {                                    //there is a gap in wall
 
+                    //condition double contact already - stay put
+                if (doubleContact(neighborN, neighborE, neighborS, neighborW)) return Move.movement(STAY_PUT);
+
+                    //condition less than double contact: turn to fill gap
                 if (viable(turn(preferred_direction), neighborN, neighborE, neighborS, neighborW, threshold + 1)) {
                     return Move.reproduce(Action.fromInt(turn(preferred_direction, 1)), calculateDNA(2, preferred_direction, turn(preferred_direction, 1)));
                 } else if (viable(turn(preferred_direction, 3), neighborN, neighborE, neighborS, neighborW, threshold + 1)) {
                     return Move.reproduce(Action.fromInt(turn(preferred_direction, 3)), calculateDNA(2, preferred_direction, turn(preferred_direction, 3)));
                 }
+
             }
         }
         return Move.movement(Action.STAY_PUT);
     }
+
+    public boolean doubleContact(int neighborN, int neighborE, int neighborS, int neighborW) {
+
+        int contactPoints = 0;
+
+        if (neighborN == 4353) contactPoints++;
+        if (neighborE == 4553) contactPoints++;
+        if (neighborW == 4553) contactPoints++;
+        if (neighborS == 4553) contactPoints++;
+
+        return contactPoints > 1;
+    }
+
     @Override
     public int externalState() {
-        return 0;
+
+        return 4353;
     }
 
 }
