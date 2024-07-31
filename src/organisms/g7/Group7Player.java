@@ -14,15 +14,9 @@ public class Group7Player implements OrganismsPlayer {
 
     private int dna;
 
-    private int energy = 0;
+    private int energy;
 
-    private ArrayList<Action> lastMoves = new ArrayList<>();
-
-    private int RESETCOOLDOWN = 10;
-
-    private boolean coolingDown = false;
-
-    private int coolDown = 0;
+    private ArrayList<Action> lastMoves;
 
     private ThreadLocalRandom random;
 
@@ -31,6 +25,7 @@ public class Group7Player implements OrganismsPlayer {
         this.game= game;
         this.dna = dna;
         this.random = ThreadLocalRandom.current();
+        this.lastMoves = new ArrayList<>();
     }
 
     @Override
@@ -38,7 +33,7 @@ public class Group7Player implements OrganismsPlayer {
 
     @Override
     public Color color() {
-        return new Color(87, 6, 236, 204);
+        return new Color(255, 10, 10, 255);
     }
 
     private Action getOppositeDirection() {
@@ -70,17 +65,6 @@ public class Group7Player implements OrganismsPlayer {
         return false;
     }
 
-    private void incrementCooldown() {
-        if (coolDown < RESETCOOLDOWN) {
-            ++coolDown;
-        }
-    }
-
-    private void decrementCooldown() {
-        if (coolDown > 0) {
-            --coolDown;
-        }
-    }
 
     @Override
     public Move move(int foodHere, int energyLeft, boolean foodN, boolean foodE,
@@ -93,19 +77,12 @@ public class Group7Player implements OrganismsPlayer {
         ArrayList<Integer> emptySquares = new ArrayList<>();
         Action[] dirs = new Action[]{Action.NORTH, Action.EAST, Action.SOUTH, Action.WEST};
 
-        this.energy = Math.min(255, energy);
+        this.energy = energyLeft;
 
-        if (coolDown == 0) {
-            coolingDown = true;
-        }
-        else if (coolDown >= 5) {
-            coolingDown = false;
-        }
 
         //if present square has food or coolDown is 0, stay put
         //consider moving to allow the chance for more food to generate
-        if (0 < foodHere && foodHere < 4 || coolingDown) {
-            incrementCooldown();
+        if (0 < foodHere && foodHere < 3) {//best upper limit is 3, original limit was 4
             return Move.movement(Action.STAY_PUT);
         }
         else {
@@ -113,7 +90,7 @@ public class Group7Player implements OrganismsPlayer {
             for (int i=0; i<4; ++i) {
                 if (food[i] && neighbors[i] == -1) {
                     action = dirs[i];
-                    break;
+                    return Move.movement(action);
                 }
                 if (neighbors[i] == -1) {
                     emptySquares.add(i);
@@ -123,46 +100,42 @@ public class Group7Player implements OrganismsPlayer {
             if (action == null) {
                 //if no open spaces, stay put
                 if (emptySquares.size() == 0) {
-                    incrementCooldown();
                     return Move.movement(Action.STAY_PUT);
                 }
 
-                //check external state of neighbors move away from low energy neighbors
-                if(neighborN>=0 && neighborN<50){
-                    action = Action.SOUTH;
-                }
-                if(neighborS>=0 && neighborS<50){
-                    action = Action.NORTH;
-                }
-                if(neighborW>=0 && neighborW<50){
-                    action = Action.EAST;
-                }
-                if(neighborE>=0 && neighborE<50){
-                    action = Action.WEST;
-                }
-                if (action == null) {
-                    //otherwise choose random empty square to move to, avoiding previous square if possible
-                    Action oppDir = getOppositeDirection();
-                    emptySquares.remove(oppDir);
-                    if (emptySquares.size() == 1 && dirs[emptySquares.get(0)] == oppDir) {
-                        decrementCooldown();
-                        action = oppDir;
-                    } else {
-                        int randIndex = this.random.nextInt(0, emptySquares.size());
-                        action = dirs[emptySquares.get(randIndex)];
-                    }
-                }
-                if (action != Action.STAY_PUT) {
-                    decrementCooldown();
+                if(energyLeft<250){//best so far 200
+                    return Move.movement(Action.STAY_PUT);
                 }
 
-                if (energyLeft >= 250) {
+
+                //otherwise choose random empty square to move to, avoiding previous square if possible
+                Action oppDir = getOppositeDirection();
+                emptySquares.remove(oppDir);
+                if (emptySquares.size() == 1 && dirs[emptySquares.get(0)] == oppDir) {
+                    action = oppDir;
+                } else {
+                    int randIndex = this.random.nextInt(0, emptySquares.size());
+                    action = dirs[emptySquares.get(randIndex)];
+                }
+
+                if (energyLeft >= 250) {// best so far 250
                     return Move.reproduce(action, dna);
+                }
+                if(neighborN>=240 && neighborN<=241){
+                    return Move.movement(Action.SOUTH);
+                }
+                if(neighborS>=240 && neighborS<=241){
+                    return Move.movement(Action.NORTH);
+                }
+                if(neighborW>=240 && neighborW<=241){
+                    return Move.movement(Action.EAST);
+                }
+                if(neighborE>=240 && neighborE<=241){
+                    return Move.movement(Action.WEST);
                 }
                 else {
                     return Move.movement(action);
                 }
-
 
             }
         }
@@ -172,7 +145,7 @@ public class Group7Player implements OrganismsPlayer {
 
     @Override
     public int externalState() {
-        return this.energy;
+        return 240+(this.energy/50);
     }
 }
 
